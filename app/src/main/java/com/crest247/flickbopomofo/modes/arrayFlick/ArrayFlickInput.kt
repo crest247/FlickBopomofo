@@ -9,14 +9,14 @@ import com.crest247.flickbopomofo.modes.shared.array.ArrayAction
 
 sealed interface ArrayFlickAction : ArrayAction {
     data class InputRadical(
-        val displayStr: String,
-        val lookupStr: String,
-        val direction: Int,
-        val longPressStr: String
+        val displayStr: String?,
+        val lookupStr: String?,
+        val direction: Int
     ) : KeyboardAction, UpTriggerable, LongPressable {
-        override val upAction: KeyboardAction = InputRadicalUp(displayStr, lookupStr)
-        override val longPressAction: KeyboardAction =
-            InputRadicalLongPress(direction, longPressStr)
+        override val upAction: KeyboardAction
+            get() = if (displayStr != null && lookupStr != null)
+                InputRadicalUp(displayStr, lookupStr)
+            else super.upAction
     }
 
     data class InputRadicalUp(

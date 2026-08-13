@@ -64,6 +64,8 @@ fun StandardCategoryTabs(
                             tint = colors.candidateText
                         )
                     }
+
+                    is KeyContent.Multi -> {}
                 }
             }
         }

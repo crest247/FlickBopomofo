@@ -30,18 +30,16 @@ object ArrayFlickLayoutProvider {
         editorInfo: EditorInfo?,
         metaCode: Int
     ): List<List<KeyData>> {
-        fun radicalKey(
-            centerText: String,
-            displayTexts: List<String>,
-            lookupTexts: List<String>
+        fun bopomofoKey(
+            displayTexts: List<String?>,
+            lookupTexts: List<String?>
         ): FlickKeyData<*> {
             return FlickKeyData(
-                KeyContent.Text(centerText),
-                List(displayTexts.size) { KeyContent.Text(displayTexts[it]) },
+                KeyContent.Multi(displayTexts.map { it?.let { KeyContent.Text(it) } }),
+                displayTexts.map { it?.let { KeyContent.Text(it) } },
                 List(displayTexts.size) {
                     it to ArrayFlickAction.InputRadical(
-                        displayTexts[it], lookupTexts[it],
-                        it, centerText
+                        displayTexts[it], lookupTexts[it], it
                     )
                 }.toMap()
             )
@@ -88,30 +86,30 @@ object ArrayFlickLayoutProvider {
         return listOf(
             listOf(
                 SystemKeyFactory.create(FuncType.TAB, 1.0f),
-                radicalKey("1", listOf("1-", "1^", "1v"), listOf("a", "q", "z")),
-                radicalKey("2", listOf("2-", "2^", "2v"), listOf("s", "w", "x")),
-                radicalKey("3", listOf("3-", "3^", "3v"), listOf("d", "e", "c")),
+                bopomofoKey(listOf("ㄅ", "ㄇ", "ㄈ", null, "ㄆ"), listOf("1", "a", "z", null, "q")),
+                bopomofoKey(listOf("ㄉ", "ㄋ", "ㄌ", null, "ㄊ"), listOf("2", "s", "x", null, "w")),
+                bopomofoKey(listOf("ㄍ", null, "ㄏ", null, "ㄎ"), listOf("e", null, "c", null, "d")),
                 SystemKeyFactory.create(FuncType.BACKSPACE, 1.0f, ArrayAction.Backspace),
             ),
             listOf(
-                SystemKeyFactory.create(FuncType.DELETE, 1.0f),
-                radicalKey("4", listOf("4-", "4^", "4v"), listOf("f", "r", "v")),
-                radicalKey("5", listOf("5-", "5^", "5v"), listOf("g", "t", "b")),
-                radicalKey("6", listOf("6-", "6^", "6v"), listOf("h", "y", "n")),
-                SystemKeyFactory.create(FuncType.SPACE, 1.0f, ArrayAction.Space),
+                dpadKey,
+                bopomofoKey(listOf("ㄐ", null, "ㄒ", null, "ㄑ"), listOf("r", null, "v", null, "f")),
+                bopomofoKey(listOf("ㄓ", null, "ㄕ", "ㄖ", "ㄔ"), listOf("5", null, "g", "b", "t")),
+                bopomofoKey(listOf("ㄗ", null, "ㄙ", null, "ㄘ"), listOf("y", null, "n", null, "h")),
+                modifierKey
             ),
             listOf(
                 SystemKeyFactory.create(FuncType.SPACE, 1.0f, ArrayAction.Space),
-                radicalKey("7", listOf("7-", "7^", "7v"), listOf("j", "u", "m")),
-                radicalKey("8", listOf("8-", "8^", "8v"), listOf("k", "i", ",")),
-                radicalKey("9", listOf("9-", "9^", "9v"), listOf("l", "o", ".")),
+                bopomofoKey(listOf("ㄚ", "ㄠ", "ㄢ", "ㄤ", "ㄞ"), listOf("8", "l", "0", ";", "9")),
+                bopomofoKey(listOf("ㄛ", "ㄡ", null, null, null), listOf("i", ".", null, null, null)),
+                bopomofoKey(listOf("ㄜ", null, "ㄣ", "ㄥ", null), listOf("k", null, "p", "/", null)),
                 SystemKeyFactory.create(FuncType.SPACE, 1.0f, ArrayAction.Space),
             ),
             listOf(
                 SystemKeyFactory.create(FuncType.LANGUAGE, 1.0f),
-                modifierKey,
-                radicalKey("0", listOf("0-", "0^", "0v"), listOf(";", "p", "/")),
-                dpadKey,
+                bopomofoKey(listOf("ㄝ", null, null, null, "ㄟ"), listOf(",", null, null, null, "o")),
+                bopomofoKey(listOf("ㄩ", "ㄨ", null, null, "ㄧ"), listOf("m", "j", null, null, "u")),
+                bopomofoKey(listOf("ㄦ", "ˊ", "ˇ", "ˋ", "˙"), listOf("-", "6", "3", "4", "7")),
                 SystemKeyFactory.createEnterKey(editorInfo, 1.0f, ArrayFlickAction.Enter)
             ),
         )
