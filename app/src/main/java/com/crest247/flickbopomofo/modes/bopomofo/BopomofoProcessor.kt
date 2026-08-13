@@ -1,4 +1,4 @@
-package com.crest247.flickbopomofo.modes.shared.array
+package com.crest247.flickbopomofo.modes.bopomofo
 
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
@@ -10,16 +10,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.crest247.flickbopomofo.core.engine.InputProcessor
 import com.crest247.flickbopomofo.core.engine.SystemAction
+import com.crest247.flickbopomofo.core.extension.sendDownUpKeyEvents
+import com.crest247.flickbopomofo.core.extension.sendKeyDownEvent
+import com.crest247.flickbopomofo.core.extension.sendKeyUpEvent
 import com.crest247.flickbopomofo.core.models.KeyboardAction
 
-open class ArrayProcessor : InputProcessor {
-    protected var inputConnection: InputConnection? = null
+class BopomofoProcessor : InputProcessor {
+    private var inputConnection: InputConnection? = null
     var editorInfo: EditorInfo? = null; private set
     val displayTokens = mutableStateListOf<String>()
-    protected val lookupTokens = mutableStateListOf<String>()
+    private val lookupTokens = mutableStateListOf<String>()
     var candidates by mutableStateOf<List<String>>(emptyList()); private set
     var selectedCandidateIndex by mutableIntStateOf(0); private set
     private var visibleCandidateCount by mutableIntStateOf(5)
+    var metaCode by mutableIntStateOf(0)
 
     override fun updateConnection(inputConnection: InputConnection, editorInfo: EditorInfo) {
         this.inputConnection = inputConnection
@@ -38,10 +42,10 @@ open class ArrayProcessor : InputProcessor {
     }
 
     override fun onAction(action: KeyboardAction): KeyboardAction? {
-        if (action !is ArrayAction) return action
+        if (action !is BopomofoAction) return action
 
         when (action) {
-            is ArrayAction.InputRadical -> {
+            is BopomofoAction.InputRadicalUp -> {
                 if (isInvalidArrayRadical(action.lookupStr))
                     return null
                 displayTokens.add(action.displayStr)
@@ -49,7 +53,75 @@ open class ArrayProcessor : InputProcessor {
                 updateCandidates()
             }
 
-            is ArrayAction.Backspace -> {
+            is BopomofoAction.DirectionalPad -> {
+                if (metaCode == KeyEvent.KEYCODE_CTRL_LEFT)
+                    when (action.direction) {
+                        1 -> inputConnection?.sendDownUpKeyEvents(
+                            KeyEvent.KEYCODE_A, KeyEvent.META_CTRL_ON
+                        )
+
+                        2 -> inputConnection?.sendDownUpKeyEvents(
+                            KeyEvent.KEYCODE_V, KeyEvent.META_CTRL_ON
+                        )
+
+                        3 -> inputConnection?.sendDownUpKeyEvents(
+                            KeyEvent.KEYCODE_Y, KeyEvent.META_CTRL_ON
+                        )
+
+                        4 -> inputConnection?.sendDownUpKeyEvents(
+                            KeyEvent.KEYCODE_Z, KeyEvent.META_CTRL_ON
+                        )
+
+                        5 -> inputConnection?.sendDownUpKeyEvents(
+                            KeyEvent.KEYCODE_C, KeyEvent.META_CTRL_ON
+                        )
+                    }
+                else when (action.direction) {
+                    1 -> inputConnection?.sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_UP, 0)
+                    2 -> inputConnection?.sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                    3 -> inputConnection?.sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_DOWN, 0)
+                    4 -> inputConnection?.sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_LEFT, 0)
+                }
+            }
+
+            is BopomofoAction.PhysicalModifierFlick -> {
+                val newMetaCode = when (action.direction) {
+                    1 -> KeyEvent.KEYCODE_SHIFT_LEFT
+                    2 -> KeyEvent.KEYCODE_CTRL_LEFT
+                    else -> 0
+                }
+                if (metaCode != newMetaCode) {
+                    inputConnection?.sendKeyUpEvent(metaCode, 0)
+                    inputConnection?.sendKeyDownEvent(newMetaCode, 0)
+                    metaCode = newMetaCode
+                }
+            }
+
+            is BopomofoAction.PhysicalModifierUp -> {
+                inputConnection?.sendKeyUpEvent(metaCode, 0)
+                metaCode = 0
+            }
+
+            is BopomofoAction.Enter -> {
+                if (candidates.isNotEmpty()) commitCandidate(candidates.first())
+                else if (displayTokens.isEmpty())
+                    when (metaCode) {
+                        KeyEvent.KEYCODE_CTRL_LEFT -> {
+                            inputConnection?.sendDownUpKeyEvents(
+                                KeyEvent.KEYCODE_ENTER, KeyEvent.META_CTRL_ON
+                            )
+                        }
+
+                        KeyEvent.KEYCODE_SHIFT_LEFT ->
+                            inputConnection?.sendDownUpKeyEvents(
+                                KeyEvent.KEYCODE_ENTER, KeyEvent.META_SHIFT_ON
+                            )
+
+                        else -> return SystemAction.Enter
+                    }
+            }
+
+            is BopomofoAction.Backspace -> {
                 if (displayTokens.isNotEmpty()) {
                     displayTokens.removeAt(displayTokens.lastIndex)
                     lookupTokens.removeAt(lookupTokens.lastIndex)
@@ -61,14 +133,9 @@ open class ArrayProcessor : InputProcessor {
                     return SystemAction.Backspace
             }
 
-            is ArrayAction.Space -> {
+            is BopomofoAction.Space -> {
                 if (candidates.isNotEmpty()) commitCandidate(candidates.first())
                 else if (displayTokens.isEmpty()) return SystemAction.Space
-            }
-
-            is ArrayAction.Enter -> {
-                if (candidates.isNotEmpty()) commitCandidate(candidates.first())
-                else if (displayTokens.isEmpty()) return SystemAction.Enter
             }
         }
         return null
@@ -76,7 +143,7 @@ open class ArrayProcessor : InputProcessor {
 
     private fun updateCandidates() {
         val lookupString = lookupTokens.joinToString("")
-        candidates = ArrayDecoder.decode(lookupString)
+        candidates = BopomofoDecoder.decode(lookupString)
         selectedCandidateIndex = 0
     }
 

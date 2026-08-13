@@ -1,4 +1,4 @@
-package com.crest247.flickbopomofo.modes.arrayFlick
+package com.crest247.flickbopomofo.modes.bopomofo
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -10,7 +10,7 @@ import com.crest247.flickbopomofo.core.ui.preview.KeyboardPreviewWrapper
 import com.crest247.flickbopomofo.core.ui.preview.ThemePreviews
 
 @Composable
-fun ArrayFlickKeyLayout(processor: ArrayFlickProcessor) {
+fun BopomofoKeyLayout(processor: BopomofoProcessor) {
     val dimens = LocalKeyboardDimens.current
     val state = LocalKeyboardState.current
     val systemProcessor = state.systemProcessor
@@ -19,11 +19,11 @@ fun ArrayFlickKeyLayout(processor: ArrayFlickProcessor) {
     val metaCode = processor.metaCode
 
     val keyRows = remember(editorInfo, metaCode) {
-        ArrayFlickLayoutProvider.createKeys(editorInfo, metaCode)
+        BopomofoLayoutProvider.createKeys(editorInfo, metaCode)
     }
     StandardKeyboard(
         keyRows = keyRows,
-        rowHeight = dimens.arrayFlickKeyHeight,
+        rowHeight = dimens.bopomofoKeyHeight,
     ) { keyEvent ->
         processor.executeDefault(keyEvent, systemProcessor)
     }
@@ -33,6 +33,6 @@ fun ArrayFlickKeyLayout(processor: ArrayFlickProcessor) {
 @Composable
 fun PreviewKeyLayout() {
     KeyboardPreviewWrapper {
-        ArrayFlickKeyLayout(processor = ArrayFlickProcessor())
+        BopomofoKeyLayout(processor = BopomofoProcessor())
     }
 }

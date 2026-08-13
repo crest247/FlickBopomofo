@@ -31,9 +31,17 @@ fun rememberResponsiveDimens(): KeyboardDimens {
         val padding = if (isTablet) 4.dp else 2.dp
         val candidateHeight = baseKeyHeight + padding * 4
 
+        val keyTextSize = (baseKeyHeight.value * 0.45f).sp
+        val keyIconSize = baseKeyHeight * 0.5f
+
+        val previewTextSize = if (isLandscape && !isTablet) 20.sp else 24.sp
+        val previewIconSize = if (isLandscape && !isTablet) 24.dp else 30.dp
+
         KeyboardDimens(
-            keyTextSize = (baseKeyHeight.value * 0.45f).sp,
-            keyIconSize = baseKeyHeight * 0.5f,
+            keyTextSize = keyTextSize,
+            keyIconSize = keyIconSize,
+            smallKeyTextSize = keyTextSize / 2.0f,
+            smallKeyIconSize = keyIconSize / 2.0f,
             candidateVerticalPadding = padding * 2,
             candidateHorizontalPadding = if (isLandscape || isTablet) padding * 2 else padding * 3,
             candidateHeight = candidateHeight,
@@ -44,19 +52,18 @@ fun rememberResponsiveDimens(): KeyboardDimens {
             radicalPadding = padding * 4,
             keyPadding = padding,
             keyRadius = 8.dp,
-            previewTextSize = if (isLandscape && !isTablet) 20.sp else 24.sp,
-            previewSmallTextSize = 12.sp,
-            previewIconSize = if (isLandscape && !isTablet) 24.dp else 30.dp,
-            previewSmallIconSize = 15.dp,
+            previewTextSize = previewTextSize,
+            previewIconSize = previewIconSize,
+            previewSmallTextSize = previewTextSize / 2.0f,
+            previewSmallIconSize = previewIconSize / 2.0f,
             previewTransparentPadding = if (isLandscape && !isTablet) 60.dp else 80.dp,
             previewScale = 1.1f,
             previewGap = 4.dp,
             previewCornerRadius = 12.dp,
             previewBorderWidth = 0.5.dp,
             englishKeyHeight = baseKeyHeight,
-            array30KeyHeight = baseKeyHeight,
             numberKeyHeight = numPadKeyHeight,
-            arrayFlickKeyHeight = numPadKeyHeight,
+            bopomofoKeyHeight = numPadKeyHeight,
             symbolKeyHeight = baseKeyHeight,
             emojiKeyHeight = baseKeyHeight,
             flickThreshold = 10.dp,

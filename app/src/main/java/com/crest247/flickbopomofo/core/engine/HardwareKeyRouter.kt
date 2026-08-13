@@ -2,8 +2,7 @@ package com.crest247.flickbopomofo.core.engine
 
 import android.view.KeyEvent
 import com.crest247.flickbopomofo.core.state.KeyboardState
-import com.crest247.flickbopomofo.modes.array30.Array30Module
-import com.crest247.flickbopomofo.modes.arrayFlick.ArrayFlickModule
+import com.crest247.flickbopomofo.modes.bopomofo.BopomofoModule
 import com.crest247.flickbopomofo.modes.english.EnglishModule
 
 class HardwareKeyRouter(
@@ -14,8 +13,7 @@ class HardwareKeyRouter(
 
     fun dispatchKeyDown(event: KeyEvent): Boolean {
         when (keyboardState.currentModule) {
-            EnglishModule, ArrayFlickModule -> {}
-            Array30Module -> keyboardState.switchModule(ArrayFlickModule)
+            EnglishModule, BopomofoModule -> {}
             else -> keyboardState.switchModule(EnglishModule)
         }
         val keyCode = event.keyCode

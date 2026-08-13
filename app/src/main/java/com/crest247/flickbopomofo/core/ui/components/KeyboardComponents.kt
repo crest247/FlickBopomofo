@@ -138,8 +138,8 @@ fun KeyContent.Display(
     textSize: TextUnit,
     iconSize: Dp,
     modifier: Modifier = Modifier,
-    smallTextSize: TextUnit = LocalKeyboardDimens.current.previewSmallTextSize,
-    smallIconSize: Dp = LocalKeyboardDimens.current.previewSmallIconSize,
+    smallTextSize: TextUnit = LocalKeyboardDimens.current.smallKeyTextSize,
+    smallIconSize: Dp = LocalKeyboardDimens.current.smallKeyIconSize,
     color: Color = LocalKeyboardColors.current.keyText
 ) {
     when (this) {

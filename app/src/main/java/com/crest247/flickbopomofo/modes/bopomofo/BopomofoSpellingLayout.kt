@@ -1,4 +1,4 @@
-package com.crest247.flickbopomofo.modes.shared.array
+package com.crest247.flickbopomofo.modes.bopomofo
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -16,7 +16,7 @@ import com.crest247.flickbopomofo.core.theme.LocalKeyboardColors
 import com.crest247.flickbopomofo.core.theme.LocalKeyboardDimens
 
 @Composable
-fun ArraySpellingLayout(processor: ArrayProcessor) {
+fun BopomofoSpellingLayout(processor: BopomofoProcessor) {
     val dimens = LocalKeyboardDimens.current
     val colors = LocalKeyboardColors.current
 

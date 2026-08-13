@@ -1,12 +1,13 @@
-package com.crest247.flickbopomofo.modes.shared.array
+package com.crest247.flickbopomofo.modes.bopomofo
 
 import android.content.Context
 import com.crest247.flickbopomofo.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.floor
+import kotlin.text.iterator
 
-object ArrayDecoder {
+object BopomofoDecoder {
     private var keySumTable: List<String> = emptyList()
     private var valueSumTable: List<String> = emptyList()
 
@@ -85,6 +86,4 @@ object ArrayDecoder {
         val data = valueSumTable[lineNumber].split('\t').getOrNull(index) ?: return emptyList()
         return data.split(' ')
     }
-
-    private val arrayAlphabet = listOf("pqwertyuio", ";asdfghjkl", "/zxcvbnm,.")
 }

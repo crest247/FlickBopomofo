@@ -1,4 +1,4 @@
-package com.crest247.flickbopomofo.modes.arrayFlick
+package com.crest247.flickbopomofo.modes.bopomofo
 
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
@@ -23,9 +23,8 @@ import com.crest247.flickbopomofo.core.models.KeyData
 import com.crest247.flickbopomofo.core.models.SystemKeyFactory
 import com.crest247.flickbopomofo.core.ui.components.KeyContent
 import com.crest247.flickbopomofo.core.ui.components.KeyContent.Icon
-import com.crest247.flickbopomofo.modes.shared.array.ArrayAction
 
-object ArrayFlickLayoutProvider {
+object BopomofoLayoutProvider {
     fun createKeys(
         editorInfo: EditorInfo?,
         metaCode: Int
@@ -38,7 +37,7 @@ object ArrayFlickLayoutProvider {
                 KeyContent.Multi(displayTexts.map { it?.let { KeyContent.Text(it) } }),
                 displayTexts.map { it?.let { KeyContent.Text(it) } },
                 List(displayTexts.size) {
-                    it to ArrayFlickAction.InputRadical(
+                    it to BopomofoAction.InputRadical(
                         displayTexts[it], lookupTexts[it], it
                     )
                 }.toMap()
@@ -52,7 +51,7 @@ object ArrayFlickLayoutProvider {
                 KeyContent.Text("⇧"),
                 Icon(Icons.Outlined.KeyboardControlKey)
             ),
-            directionActions = (0..2).associateWith { ArrayFlickAction.PhysicalModifier(it) },
+            directionActions = (0..2).associateWith { BopomofoAction.PhysicalModifier(it) },
             weight = 1.0f,
             backgroundType = KeyBackgroundType.FUNCTIONAL
         )
@@ -77,7 +76,7 @@ object ArrayFlickLayoutProvider {
                         Icon(Icons.Default.ArrowDownward),
                         Icon(Icons.AutoMirrored.Filled.ArrowBack)
                     ),
-                directionActions = (0..5).associateWith { ArrayFlickAction.DirectionalPad(it) },
+                directionActions = (0..5).associateWith { BopomofoAction.DirectionalPad(it) },
                 weight = 1.0f,
                 backgroundType = KeyBackgroundType.FUNCTIONAL
             )
@@ -89,7 +88,7 @@ object ArrayFlickLayoutProvider {
                 bopomofoKey(listOf("ㄅ", "ㄇ", "ㄈ", null, "ㄆ"), listOf("1", "a", "z", null, "q")),
                 bopomofoKey(listOf("ㄉ", "ㄋ", "ㄌ", null, "ㄊ"), listOf("2", "s", "x", null, "w")),
                 bopomofoKey(listOf("ㄍ", null, "ㄏ", null, "ㄎ"), listOf("e", null, "c", null, "d")),
-                SystemKeyFactory.create(FuncType.BACKSPACE, 1.0f, ArrayAction.Backspace),
+                SystemKeyFactory.create(FuncType.BACKSPACE, 1.0f, BopomofoAction.Backspace),
             ),
             listOf(
                 dpadKey,
@@ -99,18 +98,18 @@ object ArrayFlickLayoutProvider {
                 modifierKey
             ),
             listOf(
-                SystemKeyFactory.create(FuncType.SPACE, 1.0f, ArrayAction.Space),
+                SystemKeyFactory.create(FuncType.SPACE, 1.0f, BopomofoAction.Space),
                 bopomofoKey(listOf("ㄚ", "ㄠ", "ㄢ", "ㄤ", "ㄞ"), listOf("8", "l", "0", ";", "9")),
                 bopomofoKey(listOf("ㄛ", "ㄡ", null, null, null), listOf("i", ".", null, null, null)),
                 bopomofoKey(listOf("ㄜ", null, "ㄣ", "ㄥ", null), listOf("k", null, "p", "/", null)),
-                SystemKeyFactory.create(FuncType.SPACE, 1.0f, ArrayAction.Space),
+                SystemKeyFactory.create(FuncType.SPACE, 1.0f, BopomofoAction.Space),
             ),
             listOf(
                 SystemKeyFactory.create(FuncType.LANGUAGE, 1.0f),
                 bopomofoKey(listOf("ㄝ", null, null, null, "ㄟ"), listOf(",", null, null, null, "o")),
                 bopomofoKey(listOf("ㄩ", "ㄨ", null, null, "ㄧ"), listOf("m", "j", null, null, "u")),
                 bopomofoKey(listOf("ㄦ", "ˊ", "ˇ", "ˋ", "˙"), listOf("-", "6", "3", "4", "7")),
-                SystemKeyFactory.createEnterKey(editorInfo, 1.0f, ArrayFlickAction.Enter)
+                SystemKeyFactory.createEnterKey(editorInfo, 1.0f, BopomofoAction.Enter)
             ),
         )
     }

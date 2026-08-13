@@ -19,7 +19,7 @@ import com.crest247.flickbopomofo.core.theme.KeyboardTheme
 import com.crest247.flickbopomofo.core.ui.areas.MainKeyboardContainer
 import com.crest247.flickbopomofo.core.ui.components.LocalPreviewHandler
 import com.crest247.flickbopomofo.core.ui.components.PreviewHandler
-import com.crest247.flickbopomofo.modes.shared.array.ArrayDecoder
+import com.crest247.flickbopomofo.modes.bopomofo.BopomofoDecoder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,7 +33,7 @@ class MainInputMethodService : ComposedInputMethodService() {
 
     init {
         CoroutineScope(Dispatchers.Main).launch {
-            ArrayDecoder.loadData(this@MainInputMethodService)
+            BopomofoDecoder.loadData(this@MainInputMethodService)
         }
     }
 

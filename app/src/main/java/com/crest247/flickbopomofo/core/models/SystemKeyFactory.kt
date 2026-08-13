@@ -26,8 +26,6 @@ import com.crest247.flickbopomofo.core.engine.SystemAction
 import com.crest247.flickbopomofo.core.ui.components.KeyContent
 import com.crest247.flickbopomofo.core.ui.components.KeyContent.Icon
 
-fun Modifier.flipHorizontal(): Modifier = this.graphicsLayer(scaleX = -1f)
-
 object SystemKeyFactory {
     private val defaultContents = mapOf(
         FuncType.BACKSPACE to KeyContent.Icon(Icons.AutoMirrored.Outlined.Backspace),
@@ -83,8 +81,7 @@ object SystemKeyFactory {
                 content,
                 listOf(
                     KeyContent.Text(""),
-                    KeyContent.Text("行ᶠ"),
-                    KeyContent.Text("行³⁰"),
+                    KeyContent.Text("ㄅ"),
                     KeyContent.Icon(Icons.Outlined.Abc),
                     KeyContent.Icon(Icons.Outlined.EmojiSymbols),
                     KeyContent.Icon(Icons.Outlined.EmojiEmotions),
@@ -97,7 +94,6 @@ object SystemKeyFactory {
                     3 to SystemAction.SwitchModule(2),
                     4 to SystemAction.SwitchModule(3),
                     5 to SystemAction.SwitchModule(4),
-                    6 to SystemAction.SwitchModule(5),
                 ),
                 weight,
                 KeyBackgroundType.FUNCTIONAL
