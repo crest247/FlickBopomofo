@@ -29,17 +29,26 @@ object BopomofoLayoutProvider {
         editorInfo: EditorInfo?,
         metaCode: Int
     ): List<List<KeyData>> {
-        fun bopomofoKey(
-            displayTexts: List<String?>,
-            lookupTexts: List<String?>
-        ): FlickKeyData<*> {
+        fun bopomofoKey(radicals: List<String?>): FlickKeyData<*> {
             return FlickKeyData(
-                KeyContent.Multi(displayTexts.map { it?.let { KeyContent.Text(it) } }),
-                displayTexts.map { it?.let { KeyContent.Text(it) } },
-                List(displayTexts.size) {
-                    it to BopomofoAction.InputRadical(
-                        displayTexts[it], lookupTexts[it], it
-                    )
+                KeyContent.Multi(radicals.map { it?.let { KeyContent.Text(it) } }),
+                radicals.map { it?.let { KeyContent.Text(it) } },
+                List(radicals.size) {
+                    it to BopomofoAction.InputRadical(radicals[it], it)
+                }.toMap()
+            )
+        }
+
+        fun flickKey(centerText: String, popupTexts: List<String>): FlickKeyData<*> {
+            return FlickKeyData(
+                KeyContent.Text(centerText),
+                List(popupTexts.size + 1) { index ->
+                    if (index == 0) KeyContent.Text("")
+                    else KeyContent.Text(popupTexts[index - 1])
+                },
+                List(popupTexts.size + 1) { index ->
+                    if (index == 0) 0 to BopomofoAction.InputSymbolClick(centerText)
+                    else index to BopomofoAction.InputSymbolUp(popupTexts[index - 1])
                 }.toMap()
             )
         }
@@ -81,34 +90,51 @@ object BopomofoLayoutProvider {
                 backgroundType = KeyBackgroundType.FUNCTIONAL
             )
 
+        fun leftSpaceKey(): FlickKeyData<*> {
+            val popupTexts = listOf("「", "」", "）", "（", "』", "『")
+            return FlickKeyData(
+                KeyContent.Text(" "),
+                List(popupTexts.size + 1) { index ->
+                    if (index == 0) KeyContent.Text("")
+                    else KeyContent.Text(popupTexts[index - 1])
+                },
+                List(popupTexts.size + 1) { index ->
+                    if (index == 0) 0 to BopomofoAction.Space
+                    else index to BopomofoAction.InputSymbolUp(popupTexts[index - 1])
+                }.toMap()
+            )
+        }
 
         return listOf(
             listOf(
                 SystemKeyFactory.create(FuncType.TAB, 1.0f),
-                bopomofoKey(listOf("ㄅ", "ㄇ", "ㄈ", null, "ㄆ"), listOf("1", "a", "z", null, "q")),
-                bopomofoKey(listOf("ㄉ", "ㄋ", "ㄌ", null, "ㄊ"), listOf("2", "s", "x", null, "w")),
-                bopomofoKey(listOf("ㄍ", null, "ㄏ", null, "ㄎ"), listOf("e", null, "c", null, "d")),
+                bopomofoKey(listOf("ㄅ", "ㄇ", "ㄈ", null, "ㄆ")),
+                bopomofoKey(listOf("ㄉ", "ㄋ", "ㄌ", null, "ㄊ")),
+                bopomofoKey(listOf("ㄍ", "ㄏ", null, null, "ㄎ")),
                 SystemKeyFactory.create(FuncType.BACKSPACE, 1.0f, BopomofoAction.Backspace),
             ),
             listOf(
-                dpadKey,
-                bopomofoKey(listOf("ㄐ", null, "ㄒ", null, "ㄑ"), listOf("r", null, "v", null, "f")),
-                bopomofoKey(listOf("ㄓ", null, "ㄕ", "ㄖ", "ㄔ"), listOf("5", null, "g", "b", "t")),
-                bopomofoKey(listOf("ㄗ", null, "ㄙ", null, "ㄘ"), listOf("y", null, "n", null, "h")),
-                modifierKey
+                modifierKey,
+                bopomofoKey(listOf("ㄐ", "ㄒ", null, null, "ㄑ")),
+                bopomofoKey(listOf("ㄓ", "ㄕ", "ㄖ", null, "ㄔ")),
+                bopomofoKey(listOf("ㄗ", "ㄙ", null, null, "ㄘ")),
+                dpadKey
             ),
             listOf(
-                SystemKeyFactory.create(FuncType.SPACE, 1.0f, BopomofoAction.Space),
-                bopomofoKey(listOf("ㄚ", "ㄠ", "ㄢ", "ㄤ", "ㄞ"), listOf("8", "l", "0", ";", "9")),
-                bopomofoKey(listOf("ㄛ", "ㄡ", null, null, null), listOf("i", ".", null, null, null)),
-                bopomofoKey(listOf("ㄜ", null, "ㄣ", "ㄥ", null), listOf("k", null, "p", "/", null)),
+                leftSpaceKey(),
+                bopomofoKey(listOf("ㄚ", "ㄜ", "ㄝ", null, "ㄛ")),
+                bopomofoKey(listOf("ㄞ", "ㄠ", "ㄡ", null, "ㄟ")),
+                bopomofoKey(listOf("ㄢ", "ㄤ", "ㄥ", "ㄦ", "ㄣ")),
                 SystemKeyFactory.create(FuncType.SPACE, 1.0f, BopomofoAction.Space),
             ),
             listOf(
                 SystemKeyFactory.create(FuncType.LANGUAGE, 1.0f),
-                bopomofoKey(listOf("ㄝ", null, null, null, "ㄟ"), listOf(",", null, null, null, "o")),
-                bopomofoKey(listOf("ㄩ", "ㄨ", null, null, "ㄧ"), listOf("m", "j", null, null, "u")),
-                bopomofoKey(listOf("ㄦ", "ˊ", "ˇ", "ˋ", "˙"), listOf("-", "6", "3", "4", "7")),
+                flickKey(
+                    "，",
+                    listOf("、", "。", "：", "？", "！", "；")
+                ),
+                bopomofoKey(listOf("ㄧ", "ㄩ", null, null, "ㄨ")),
+                bopomofoKey(listOf("ˉ", "ˊ", "ˇ", "ˋ", "˙")),
                 SystemKeyFactory.createEnterKey(editorInfo, 1.0f, BopomofoAction.Enter)
             ),
         )

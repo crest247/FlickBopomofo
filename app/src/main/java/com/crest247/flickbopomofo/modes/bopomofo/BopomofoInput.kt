@@ -9,19 +9,17 @@ import com.crest247.flickbopomofo.core.models.UpTriggerable
 
 sealed interface BopomofoAction : KeyboardAction {
     data class InputRadical(
-        val displayStr: String?,
-        val lookupStr: String?,
+        val radical: String?,
         val direction: Int
     ) : KeyboardAction, UpTriggerable, LongPressable {
         override val upAction: KeyboardAction
-            get() = if (displayStr != null && lookupStr != null)
-                InputRadicalUp(displayStr, lookupStr)
+            get() = if (radical != null)
+                InputRadicalUp(radical)
             else super.upAction
     }
 
     data class InputRadicalUp(
-        val displayStr: String,
-        val lookupStr: String,
+        val radical: String,
     ) : BopomofoAction, Clickable
 
     data class PhysicalModifier(
@@ -40,6 +38,9 @@ sealed interface BopomofoAction : KeyboardAction {
     data class DirectionalPad(
         val direction: Int
     ) : BopomofoAction, UpTriggerable
+
+    data class InputSymbolUp(val symbol: String) : BopomofoAction, UpTriggerable
+    data class InputSymbolClick(val symbol: String) : BopomofoAction, Clickable
 
     object Backspace : BopomofoAction, Clickable, Repeatable
     object Space : BopomofoAction, UpTriggerable

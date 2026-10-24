@@ -20,8 +20,9 @@ fun BopomofoSpellingLayout(processor: BopomofoProcessor) {
     val dimens = LocalKeyboardDimens.current
     val colors = LocalKeyboardColors.current
 
-    val displayText = processor.displayTokens.joinToString("")
-    val hasTokens = processor.displayTokens.isNotEmpty()
+    val displayText = processor.selectedCandidates.joinToString("") { it.text } +
+            processor.radicals.joinToString("")
+    val hasTokens = displayText.isNotEmpty()
 
     Box(
         contentAlignment = Alignment.Center,

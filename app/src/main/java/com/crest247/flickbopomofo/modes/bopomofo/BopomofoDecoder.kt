@@ -4,86 +4,189 @@ import android.content.Context
 import com.crest247.flickbopomofo.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlin.math.floor
-import kotlin.text.iterator
+import java.io.InputStream
+
+enum class BopomofoInputKind {
+    EMPTY,
+    SINGLE_SYLLABLE,
+    MIXED,
+    INVALID,
+}
+
+data class BopomofoCandidate(
+    val text: String,
+    val unitId: Int,
+    val consumed: Int,
+    val score: Double = Double.NaN
+)
+
+data class BopomofoSentence(val text: String, val units: List<BopomofoCandidate>, val score: Double)
+
+data class BopomofoResult(
+    val input: String,
+    val kind: BopomofoInputKind,
+    val sentences: List<BopomofoSentence>,
+    val candidates: List<BopomofoCandidate>,
+) {
+    companion object {
+        val EMPTY = BopomofoResult("", BopomofoInputKind.EMPTY, emptyList(), emptyList())
+    }
+}
 
 object BopomofoDecoder {
-    private var keySumTable: List<String> = emptyList()
-    private var valueSumTable: List<String> = emptyList()
+    private class LoadedData(
+        val rules: BopomofoRules,
+        val lexicon: BopomofoLexicon,
+        val model: BopomofoModel
+    ) {
+        val beamSearch = BopomofoBeamSearch(lexicon, model)
+
+        val contextStateCache =
+            object : LinkedHashMap<List<Int>, BopomofoModel.State>(16, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<List<Int>, BopomofoModel.State>?) =
+                    size > 32
+            }
+    }
+
+    @Volatile
+    private var loaded: LoadedData? = null
 
     var isLoaded = false
         private set
 
+    var beamWidth = 8
+    var maxSentences = 3
+    var maxCandidates = 60
+
     suspend fun loadData(context: Context) {
+        if (isLoaded) return
         withContext(Dispatchers.IO) {
-            val keys = context.resources.openRawResource(R.raw.array30_key_sum).bufferedReader()
-                .readLines()
-            val values = context.resources.openRawResource(R.raw.array30_value_sum).bufferedReader()
-                .readLines()
-            withContext(Dispatchers.Main) {
-                keySumTable = keys
-                valueSumTable = values
-                isLoaded = true
+            val resources = context.resources
+            loadFrom { name ->
+                resources.openRawResource(
+                    when (name) {
+                        "chars" -> R.raw.bopomofo_chars
+                        "all_chars" -> R.raw.bopomofo_all_chars
+                        "units" -> R.raw.bopomofo_units
+                        else -> R.raw.bopomofo_model
+                    }
+                )
             }
         }
     }
 
-    fun decode(lookupString: String): List<String> {
-        if (!isLoaded || keySumTable.isEmpty() || valueSumTable.isEmpty() || lookupString.isEmpty()) return emptyList()
-
-        if (lookupString.length > 5 || (lookupString.length == 5 && lookupString[4] != 'i'))
-            return emptyList()
-        if (lookupString.length == 2 && lookupString[0] == 'w' && lookupString[1] in '0'..'9')
-            return getValueList(150 + lookupString[1].code - '0'.code)
-        val sum = calcRadicalsSum(lookupString)
-        val hashValue = calcHashValue(sum)
-        return getKeyValue(hashValue, sum)
+    internal fun loadFrom(open: (String) -> InputStream) {
+        fun readBytes(name: String) = open(name).use { it.readBytes() }
+        val rules = BopomofoRules(
+            String(readBytes("chars"), Charsets.UTF_8),
+            String(readBytes("all_chars"), Charsets.UTF_8)
+        )
+        val lexicon = BopomofoLexicon(readBytes("units"), rules)
+        val model = BopomofoModel(readBytes("model"))
+        loaded = LoadedData(rules, lexicon, model)
+        isLoaded = true
     }
 
-    private fun getRadicalCode(radical: Char): Int {
-        return when (radical) {
-            in 'A'..'Z' -> radical.code - 60
-            in 'a'..'z' -> radical.code - 92
-            ',', '.', '/' -> radical.code - 43
-            ';', ':' -> 2
-            '<', '>', '?' -> radical.code - 59
-            else -> 0
-        }
-    }
-
-    private fun calcRadicalsSum(radicals: String): Int {
-        var factor = 1
-        var sum = 0
-        for (radical in radicals) {
-            val code = getRadicalCode(radical)
-            if (code == 0) return 0
-            sum += code * factor
-            factor *= 30
-        }
-        if (radicals.length == 5) sum -= 9720000
-        return sum
-    }
-
-    private fun calcHashValue(radicalsSum: Int): Int {
-        return floor((radicalsSum * 0.6180339887) % 1 * 32767).toInt()
-    }
-
-    private fun getKeyValue(lineNumber: Int, radicalsSum: Int): List<String> {
-        if (lineNumber !in keySumTable.indices) return emptyList()
-        val lineData = keySumTable[lineNumber].split('\t')
-        if (lineData.size == 1) {
-            return if (lineData[0] == "") emptyList() else lineData[0].split(' ')
-        }
-        for ((index, data) in lineData.withIndex()) {
-            if (data.toIntOrNull() == radicalsSum) {
-                return getValueList(lineNumber, index)
+    @Synchronized
+    fun decode(
+        input: String,
+        selectedUnitIds: IntArray = IntArray(0),
+        isCancelled: () -> Boolean = { false }
+    ): BopomofoResult? {
+        val data = loaded ?: return BopomofoResult.EMPTY
+        return when (val kind = data.rules.classify(input, selectedUnitIds.isNotEmpty())) {
+            BopomofoInputKind.SINGLE_SYLLABLE -> {
+                val syllable = data.rules.getCompleteSyllable(input)!!
+                BopomofoResult(
+                    input,
+                    kind,
+                    emptyList(),
+                    getTableChars(data, syllable, input.length)
+                )
             }
+
+            BopomofoInputKind.MIXED -> decodeMixed(data, input, selectedUnitIds, isCancelled)
+            else -> BopomofoResult(input, kind, emptyList(), emptyList())
         }
-        return emptyList()
     }
 
-    private fun getValueList(lineNumber: Int, index: Int = 0): List<String> {
-        val data = valueSumTable[lineNumber].split('\t').getOrNull(index) ?: return emptyList()
-        return data.split(' ')
+    private fun decodeMixed(
+        data: LoadedData, input: String, selectedUnitIds: IntArray, isCancelled: () -> Boolean
+    ): BopomofoResult? {
+        val graph = data.lexicon.buildGraph(input)
+        if (graph.target == 0) return BopomofoResult(
+            input,
+            BopomofoInputKind.INVALID,
+            emptyList(),
+            emptyList()
+        )
+        val searchResult = data.beamSearch.decode(
+            graph,
+            input.length,
+            getContextState(data, selectedUnitIds),
+            beamWidth,
+            maxSentences,
+            isCancelled
+        ) ?: return null
+        val sentences = searchResult.sentences.map { (score, path) ->
+            val units = path.toList().map { step ->
+                if (step.unitId >= 0) BopomofoCandidate(
+                    data.lexicon.getText(step.unitId),
+                    step.unitId,
+                    step.end
+                )
+                else data.lexicon.getTableChars(graph.tableFillTokens[-step.unitId - 1])[0]
+                    .let { (char, charUnitId) -> BopomofoCandidate(char, charUnitId, step.end) }
+            }
+            BopomofoSentence(units.joinToString("") { it.text }, units, score)
+        }
+        val candidates = searchResult.firstCandidates.take(maxCandidates)
+            .map { BopomofoCandidate(it.text, it.unitId, it.end, it.score) }
+        return BopomofoResult(
+            input,
+            BopomofoInputKind.MIXED,
+            sentences,
+            candidates + getHomophones(data, input, candidates)
+        )
+    }
+
+    private fun getHomophones(
+        data: LoadedData,
+        input: String,
+        candidates: List<BopomofoCandidate>
+    ): List<BopomofoCandidate> {
+        val shown = candidates.mapTo(HashSet()) { it.text to it.consumed }
+        val token = data.rules.getTokensAt(input, 0)
+            .filter { data.rules.getReadingSyllables(it).isNotEmpty() }
+            .maxByOrNull { it.end } ?: return emptyList()
+        return data.lexicon.getReadingChars(token)
+            .map { (char, charUnitId) -> BopomofoCandidate(char, charUnitId, token.end) }
+            .filter { shown.add(it.text to it.consumed) }
+    }
+
+    private fun getTableChars(
+        data: LoadedData,
+        syllable: BopomofoSyllable,
+        consumed: Int
+    ): List<BopomofoCandidate> =
+        data.rules.charsBySyllable[syllable].orEmpty().distinct()
+            .map { char ->
+                BopomofoCandidate(
+                    char,
+                    data.lexicon.getCharUnitId(char, syllable),
+                    consumed
+                )
+            }
+
+    private fun getContextState(data: LoadedData, unitIds: IntArray): BopomofoModel.State {
+        val validUnitIds = unitIds.filter { it >= 0 }
+        data.contextStateCache[validUnitIds]?.let { return it }
+        val state = if (validUnitIds.isEmpty()) data.model.getInitialState()
+        else data.model.advance(
+            getContextState(data, validUnitIds.dropLast(1).toIntArray()),
+            data.lexicon.unitToVocab[validUnitIds.last()]
+        )
+        data.contextStateCache[validUnitIds] = state
+        return state
     }
 }
