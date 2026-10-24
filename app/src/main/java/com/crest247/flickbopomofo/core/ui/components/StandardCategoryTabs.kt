@@ -1,7 +1,6 @@
 package com.crest247.flickbopomofo.core.ui.components
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -34,7 +33,7 @@ fun StandardCategoryTabs(
                 Box(
                     Modifier
                         .tabIndicatorOffset(tabPositions[selectedIndex])
-                        .fillMaxHeight()
+                        .height(dimens.candidateHeight)
                 ) {
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.align(Alignment.BottomCenter),
@@ -50,7 +49,7 @@ fun StandardCategoryTabs(
             Tab(
                 selected = selectedIndex == index,
                 onClick = { onTabSelected(index) },
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.height(dimens.candidateHeight)
             ) {
                 when (tabContent) {
                     is KeyContent.Text -> {
