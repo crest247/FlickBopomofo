@@ -113,6 +113,16 @@ internal class BopomofoLexicon(bytes: ByteArray, private val rules: BopomofoRule
     fun buildGraph(input: String): Graph {
         val length = input.length
         val tokensByPosition = Array(length) { rules.getTokensAt(input, it) }
+        val eaten = BooleanArray(length)
+        for (position in 0 until length) {
+            if (eaten[position]) {
+                tokensByPosition[position] = emptyList()
+                continue
+            }
+            for (token in tokensByPosition[position]) {
+                for (covered in position + 1 until minOf(token.end, length)) eaten[covered] = true
+            }
+        }
         val edges = Array(length) { IntArray(0) }
         val tableFillTokens = ArrayList<BopomofoToken>()
         val reachable = BooleanArray(length + 1)
