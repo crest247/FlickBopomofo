@@ -142,7 +142,13 @@ class BopomofoProcessor : InputProcessor {
             }
 
             is BopomofoAction.Backspace -> {
-                if (!backspace()) return SystemAction.Backspace
+                if (radicals.isEmpty()) return SystemAction.Backspace
+                radicals.removeAt(radicals.lastIndex)
+                if (radicals.isEmpty() && selectedCandidates.isNotEmpty()) {
+                    selectedCandidates.removeAt(selectedCandidates.lastIndex)
+                    radicals.addAll(selectedTokens.removeAt(selectedTokens.lastIndex))
+                }
+                updateCandidates()
             }
 
             is BopomofoAction.Space -> {
@@ -216,18 +222,6 @@ class BopomofoProcessor : InputProcessor {
             updateCandidates()
     }
 
-    private fun backspace(): Boolean {
-        if (radicals.isNotEmpty())
-            radicals.removeAt(radicals.lastIndex)
-        else if (selectedCandidates.isNotEmpty()) {
-            selectedCandidates.removeAt(selectedCandidates.lastIndex)
-            radicals.addAll(selectedTokens.removeAt(selectedTokens.lastIndex))
-        } else
-            return false
-        updateCandidates()
-        return true
-    }
-
     private fun clearState() {
         decodeJob?.cancel()
         latestRequestId = ++requestId
@@ -260,38 +254,24 @@ class BopomofoProcessor : InputProcessor {
             KeyEvent.KEYCODE_DPAD_DOWN -> return moveSelection(3) || isComposing()
             KeyEvent.KEYCODE_DPAD_LEFT -> return moveSelection(4) || isComposing()
 
-            KeyEvent.KEYCODE_DEL -> return backspace()
+            KeyEvent.KEYCODE_DEL -> return onAction(BopomofoAction.Backspace)?.let { false } ?: true
 
             KeyEvent.KEYCODE_SPACE -> {
-                if (!isComposing()) return false
                 if (radicals.isNotEmpty() && radicals.last()[0] !in BopomofoRules.MARK_TONE) {
                     radicals.add("ˉ")
                     updateCandidates()
-                } else
-                    selectCurrentCandidate()
-                return true
+                    return true
+                }
+                return onAction(BopomofoAction.Space)?.let { false } ?: true
             }
 
-            KeyEvent.KEYCODE_ENTER -> {
-                if (!isComposing()) return false
-                selectCurrentCandidate()
-                return true
-            }
+            KeyEvent.KEYCODE_ENTER -> return onAction(BopomofoAction.Enter)?.let { false } ?: true
         }
 
         val radical = radicalKeyMap[event.unicodeChar.toChar()] ?: return false
         radicals.add(radical)
         updateCandidates()
         return true
-    }
-
-    private fun selectCurrentCandidate() {
-        if (isDecoding()) pendingSelect = true
-        else if (candidates.isNotEmpty()) selectCandidate(candidates[selectedCandidateIndex])
-        else if (radicals.isEmpty()) {
-            inputConnection?.commitText(selectedCandidates.joinToString("") { it.text }, 1)
-            clearState()
-        }
     }
 
     private val radicalKeyMap = mapOf(
